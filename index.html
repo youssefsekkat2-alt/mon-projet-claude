@@ -1,0 +1,2003 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plantoo — Plantez un Arbre Fruitier</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      /* ── Plantoo Brand Palette ── */
+      --g-dark:  #2a5010;    /* vert forêt profond */
+      --g-main:  #72c040;    /* PLANTOO PRIMARY — vert lime vif */
+      --g-light: #98d450;    /* vert clair hover */
+      --g-pale:  #d8f0a8;    /* lime pâle cartes */
+      --g-bg:    #f0f8e4;    /* fond général très léger */
+      --border:  #c0e088;    /* bordures */
+      --text:    #1c2e10;    /* texte principal */
+      --muted:   #587040;    /* texte secondaire */
+      --charcoal:#1e2818;    /* footer / dark bg */
+      --lime-mid:#b4e060;    /* accent lime */
+      --shadow:    0 4px 20px rgba(42,80,16,.12);
+      --shadow-lg: 0 12px 40px rgba(42,80,16,.18);
+    }
+
+    body { font-family:'Inter',sans-serif; background:var(--g-bg); color:var(--text); }
+
+    /* ══ PLANTOO BANNER ══ */
+    .banner {
+      background:linear-gradient(90deg, var(--g-dark) 0%, #3a7018 50%, var(--g-dark) 100%);
+      color:#fff; text-align:center; padding:10px 20px;
+      font-size:13px; font-weight:500; letter-spacing:.2px;
+      position:relative; overflow:hidden;
+    }
+    .banner::before {
+      content:'🌿'; position:absolute; left:24px; top:50%; transform:translateY(-50%);
+      font-size:16px; opacity:.6;
+    }
+    .banner::after {
+      content:'🌿'; position:absolute; right:24px; top:50%; transform:translateY(-50%) scaleX(-1);
+      font-size:16px; opacity:.6;
+    }
+
+    /* ══ HEADER ══ */
+    header {
+      background:#fff; border-bottom:2px solid var(--border);
+      padding:0 40px; position:sticky; top:0; z-index:200;
+      height:64px; display:flex; align-items:center; justify-content:space-between;
+      box-shadow:0 2px 16px rgba(42,80,16,.08);
+    }
+
+    /* ── Plantoo Wordmark Logo ── */
+    .logo { text-decoration:none; display:flex; align-items:center; gap:8px; }
+    .logo-icon {
+      width:36px; height:36px; background:var(--g-main);
+      border-radius:10px; display:flex; align-items:center; justify-content:center;
+      box-shadow:0 2px 8px rgba(114,192,64,.4);
+    }
+    .logo-wordmark {
+      font-family:'Nunito','Inter',sans-serif;
+      font-weight:900; font-size:22px; line-height:1;
+      letter-spacing:-.3px; color:var(--g-main);
+      display:flex; align-items:center; gap:0;
+    }
+    .logo-wordmark .lw-plant { color:var(--text); }
+    .logo-wordmark .lw-oo   { color:var(--g-main); }
+    .logo-sub {
+      font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase;
+      letter-spacing:1px; display:block; margin-top:-4px;
+    }
+    nav { display:flex; gap:28px; }
+    nav a { text-decoration:none; color:var(--muted); font-size:13.5px; font-weight:500; transition:color .2s; }
+    nav a:hover { color:var(--g-main); }
+    .header-right { display:flex; align-items:center; gap:12px; }
+    .cart-pill {
+      background:linear-gradient(135deg, var(--g-main), #5ab030);
+      color:#fff; border:none; border-radius:50px; padding:8px 20px;
+      font-size:13px; font-weight:800; cursor:pointer;
+      display:flex; align-items:center; gap:6px; transition:all .2s;
+      box-shadow:0 3px 12px rgba(114,192,64,.4);
+      font-family:'Nunito','Inter',sans-serif;
+    }
+    .cart-pill:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(114,192,64,.5); }
+    .trustpilot { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); }
+    .tp-stars { color:#00b67a; }
+
+    .sp-bar {
+      background:linear-gradient(90deg, var(--g-pale) 0%, #fff 50%, var(--g-pale) 100%);
+      border-bottom:1px solid var(--border);
+      padding:9px 40px; display:flex; align-items:center; justify-content:center; gap:40px; font-size:12.5px; flex-wrap:wrap;
+    }
+    .sp-item { display:flex; align-items:center; gap:6px; font-weight:700; color:var(--g-dark); }
+
+    .breadcrumb { padding:14px 40px; font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:6px; max-width:1260px; margin:0 auto; }
+    .breadcrumb a { color:var(--muted); text-decoration:none; }
+
+    .main-wrap { max-width:1200px; margin:0 auto 80px; padding:0 40px; display:grid; grid-template-columns:1fr 500px; gap:52px; align-items:start; }
+
+    /* ══════════════════════════════
+       PREVIEW — Image pleine scène
+       ══════════════════════════════ */
+    .preview-col { position:sticky; top:76px; }
+
+    .preview-scene-box {
+      background:linear-gradient(145deg,#d4f0a0 0%,#eaf8c8 50%,#c8eeaa 100%);
+      border-radius:24px; padding:20px 20px 24px;
+      display:flex; flex-direction:column; align-items:center;
+      box-shadow:var(--shadow-lg); position:relative; overflow:hidden;
+    }
+
+    /* Conteneur de l'image + overlays */
+    .scene-frame {
+      position:relative;
+      width:100%;
+      max-width:400px;
+      animation:float 4.5s ease-in-out infinite;
+    }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+    /* L'image de l'arbre (scène complète) */
+    .scene-img {
+      width:100%;
+      height:auto;
+      display:block;
+      border-radius:16px;
+      transition:opacity .35s ease, transform .45s cubic-bezier(.34,1.56,.64,1);
+    }
+    .scene-img.switching {
+      opacity:0;
+      transform:scale(.96);
+    }
+
+    /* Ombre flottante sous la scène */
+    .scene-shadow {
+      width:60%; height:18px; margin:0 auto;
+      background:radial-gradient(ellipse,rgba(0,0,0,.18) 0%,transparent 70%);
+      border-radius:50%;
+      animation:sh 4.5s ease-in-out infinite;
+    }
+    @keyframes sh { 0%,100%{width:60%;opacity:.6} 50%{width:44%;opacity:.25} }
+
+    /* ── Pancarte personnalisée en overlay ──
+       Positionnée par-dessus la pancarte déjà présente dans l'image.
+       Ajustez bottom/right si nécessaire selon vos images.          */
+    .sign-overlay {
+      position:absolute;
+      bottom:20%;   /* ← ajustez si la pancarte est plus haute/basse */
+      right:6%;     /* ← ajustez si la pancarte est plus à gauche/droite */
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      pointer-events:none;
+    }
+    .sign-board {
+      background:linear-gradient(145deg,rgba(139,94,58,.92) 0%,rgba(100,65,30,.95) 50%,rgba(139,94,58,.92) 100%);
+      border:2px solid rgba(80,45,15,.8);
+      border-radius:7px;
+      padding:8px 10px;
+      width:92px;
+      min-height:76px;
+      box-shadow:3px 3px 14px rgba(0,0,0,.4), inset 0 1px 4px rgba(255,255,255,.1);
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      backdrop-filter:blur(2px);
+    }
+    .sign-line-top  { color:#ffd99a; font-size:6.5px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; }
+    .sign-line-from { color:rgba(255,216,143,.65); font-size:6px; font-weight:600; }
+    .sign-hr        { height:1px; background:rgba(255,216,143,.3); margin:2px 0; }
+    .sign-line-msg  { color:#ffe8c4; font-size:7px; font-style:italic; line-height:1.4; word-break:break-word; }
+
+    /* Badge pays */
+    .country-badge-preview {
+      display:flex; align-items:center; gap:7px;
+      background:rgba(255,255,255,.88); backdrop-filter:blur(12px);
+      padding:7px 14px; border-radius:20px;
+      font-size:12.5px; font-weight:700; color:var(--text);
+      border:1px solid rgba(255,255,255,.9);
+      box-shadow:0 2px 10px rgba(0,0,0,.08);
+      margin-top:12px; z-index:1;
+    }
+
+    /* Trust tiles */
+    .trust-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
+    .trust-tile { background:#fff; border-radius:12px; padding:11px 6px; text-align:center; font-size:10.5px; font-weight:700; color:var(--g-dark); box-shadow:0 2px 8px rgba(42,80,16,.08); border:1px solid var(--border); display:flex; flex-direction:column; gap:4px; transition:transform .2s, box-shadow .2s; }
+    .trust-tile:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(42,80,16,.14); }
+    .trust-tile span:first-child { font-size:18px; }
+
+    /* ══════════════════════════════
+       CONFIG COLUMN
+       ══════════════════════════════ */
+    .config-col { padding-top:4px; }
+
+    .prod-badges { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px; }
+    .prod-badge  { background:var(--g-pale); color:var(--g-dark); padding:4px 12px; border-radius:20px; font-size:11.5px; font-weight:700; border:1px solid var(--border); }
+
+    .prod-title { font-size:31px; font-weight:900; line-height:1.15; margin-bottom:10px; }
+    .rating-row { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+    .stars-row  { color:#f59e0b; font-size:15px; letter-spacing:1px; }
+    .rating-txt { font-size:12.5px; color:var(--muted); }
+    .price-big  { font-size:44px; font-weight:900; color:var(--g-main); display:flex; align-items:baseline; gap:5px; margin-bottom:4px; }
+    .price-suffix { font-size:15px; font-weight:500; color:var(--muted); }
+    .price-note   { font-size:12px; color:var(--muted); margin-bottom:24px; }
+
+    .cfg-card { background:#fff; border-radius:16px; padding:20px; margin-bottom:14px; box-shadow:0 2px 12px rgba(0,0,0,.05); border:1px solid var(--border); }
+    .cfg-card-head { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+    .cfg-card-icon  { font-size:17px; }
+    .cfg-card-title { font-size:14.5px; font-weight:800; color:var(--text); }
+
+    /* Grille arbres — thumbnail = image scène réduite */
+    .tree-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+    .tree-opt {
+      border:2.5px solid var(--border); border-radius:13px;
+      overflow:hidden; cursor:pointer;
+      transition:all .2s; background:#fff; position:relative;
+    }
+    .tree-opt:hover { border-color:var(--g-light); transform:translateY(-2px); box-shadow:var(--shadow); }
+    .tree-opt.sel   { border-color:var(--g-main); }
+    .tree-opt-img {
+      width:100%; aspect-ratio:1/1; object-fit:cover; object-position:center top;
+      display:block; transition:transform .3s;
+    }
+    .tree-opt:hover .tree-opt-img { transform:scale(1.05); }
+    .tree-opt-info { padding:7px 8px; background:#fff; }
+    .tree-opt-name  { font-size:10.5px; font-weight:800; color:var(--text); display:block; }
+    .tree-opt-price { font-size:10px; color:var(--muted); display:block; }
+    .pop-badge { position:absolute; top:6px; left:6px; background:#f59e0b; color:#fff; font-size:8px; font-weight:900; padding:2px 7px; border-radius:10px; white-space:nowrap; z-index:1; }
+    .sel-check { position:absolute; top:6px; right:6px; width:20px; height:20px; background:var(--g-main); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:900; z-index:1; opacity:0; transition:opacity .2s; }
+    .tree-opt.sel .sel-check { opacity:1; }
+
+    /* Pays */
+    .country-wrap { display:flex; gap:8px; }
+    .country-btn { flex:1; border:2px solid var(--border); border-radius:12px; padding:11px 6px; cursor:pointer; text-align:center; background:#fff; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--text); }
+    .country-btn:hover { border-color:var(--g-light); background:var(--g-bg); }
+    .country-btn.sel  { border-color:var(--g-main); background:var(--g-pale); color:var(--g-main); }
+    .c-flag-img { width:28px; height:20px; object-fit:cover; border-radius:3px; box-shadow:0 1px 4px rgba(0,0,0,.25); display:block; flex-shrink:0; }
+
+    /* Globe 3D */
+    #globeWrap { display:flex; flex-direction:column; align-items:center; margin-top:18px; }
+    #globeCanvas { width:220px; height:220px; border-radius:50%; display:block; box-shadow:0 4px 24px rgba(27,67,50,.18); }
+
+    /* Country Info Panel */
+    .country-info-panel { width:100%; background:var(--g-bg); border-radius:14px; padding:14px 16px; margin-top:14px; border:1px solid var(--border); animation:fadeUp .35s ease; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .ci-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .ci-flag-big { width:44px; height:30px; object-fit:cover; border-radius:5px; box-shadow:0 2px 8px rgba(0,0,0,.2); flex-shrink:0; }
+    .ci-name { font-size:15px; font-weight:900; color:var(--g-dark); }
+    .ci-capitale { font-size:11.5px; color:var(--muted); margin-top:2px; }
+    .ci-stats { display:flex; gap:14px; margin-bottom:10px; flex-wrap:wrap; }
+    .ci-stat { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); }
+    .ci-stat strong { color:var(--text); font-weight:700; }
+    .ci-anecdotes { display:flex; flex-direction:column; gap:6px; }
+    .ci-anecdote { font-size:12px; background:#fff; border-radius:8px; padding:7px 10px; border-left:3px solid var(--g-light); color:var(--text); line-height:1.4; }
+
+    /* Slider */
+    .age-row  { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+    .age-lbl  { font-size:13px; color:var(--muted); }
+    .age-val  { font-size:26px; font-weight:900; color:var(--g-main); }
+    .age-unit { font-size:13px; color:var(--muted); margin-left:3px; }
+    input[type=range] { width:100%; -webkit-appearance:none; height:6px; border-radius:3px; background:linear-gradient(to right, var(--g-main) 0%, var(--g-main) var(--pct,22%), var(--border) var(--pct,22%), var(--border) 100%); outline:none; cursor:pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; background:var(--g-main); border-radius:50%; cursor:pointer; border:3px solid #fff; box-shadow:0 2px 8px rgba(45,106,79,.45); transition:transform .15s; }
+    input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.25); }
+    .age-marks { display:flex; justify-content:space-between; margin-top:6px; }
+    .age-mark  { font-size:10px; color:var(--muted); }
+
+    /* Inputs */
+    .field-lbl   { display:block; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+    .field-input, .field-ta { width:100%; border:1.5px solid var(--border); border-radius:10px; padding:10px 14px; font-size:13.5px; font-family:'Inter',sans-serif; color:var(--text); outline:none; transition:border-color .2s; }
+    .field-ta { resize:none; height:70px; }
+    .field-input:focus, .field-ta:focus { border-color:var(--g-main); box-shadow:0 0 0 3px rgba(45,106,79,.1); }
+    .char-cnt     { text-align:right; font-size:11px; color:var(--muted); margin-top:4px; }
+    .fields-stack { display:flex; flex-direction:column; gap:12px; }
+
+    /* Peluches */
+    .peluche-row { display:flex; gap:10px; }
+    .pel-card { flex:1; border:2px solid var(--border); border-radius:13px; padding:14px 8px; cursor:pointer; text-align:center; transition:all .25s; background:#fff; position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .pel-card:hover { border-color:var(--g-light); transform:translateY(-3px); box-shadow:var(--shadow); }
+    .pel-card.sel   { border-color:var(--g-main); background:var(--g-pale); }
+    .pel-check { position:absolute; top:8px; right:8px; width:18px; height:18px; border-radius:50%; border:2px solid var(--border); background:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; transition:all .2s; }
+    .pel-card.sel .pel-check { background:var(--g-main); border-color:var(--g-main); color:#fff; }
+    .pel-img   { width:80px; height:80px; object-fit:contain; filter:drop-shadow(0 3px 8px rgba(0,0,0,.15)); border-radius:10px; }
+    .pel-name  { font-size:10.5px; font-weight:700; color:var(--text); }
+    .pel-price { font-size:13.5px; font-weight:900; color:var(--g-main); }
+
+    /* Récap prix */
+    .price-summary { background:var(--g-pale); border-radius:14px; padding:16px 18px; margin-bottom:14px; }
+    .ps-row   { display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:6px; }
+    .ps-total { display:flex; justify-content:space-between; align-items:center; font-size:19px; font-weight:900; color:var(--g-main); padding-top:10px; margin-top:8px; border-top:1px solid rgba(45,106,79,.2); }
+
+    /* CTA */
+    .cta-btn {
+      width:100%; border:none; border-radius:14px; padding:20px;
+      font-size:16px; font-weight:900; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      letter-spacing:.4px; transition:all .3s;
+      background:linear-gradient(135deg, var(--g-main) 0%, #5ab030 100%);
+      color:#fff; box-shadow:0 6px 24px rgba(114,192,64,.45);
+      font-family:'Nunito','Inter',sans-serif;
+    }
+    .cta-btn:hover  { transform:translateY(-3px); box-shadow:0 14px 36px rgba(114,192,64,.55); filter:brightness(1.05); }
+    .cta-btn:active { transform:translateY(0); }
+    .secure-note { text-align:center; font-size:11.5px; color:var(--muted); margin-top:10px; display:flex; align-items:center; justify-content:center; gap:5px; }
+
+    /* HOW IT WORKS */
+    .hiw { background:#fff; padding:72px 40px; margin-top:60px; position:relative; overflow:hidden; }
+    .hiw::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:4px;
+      background:linear-gradient(90deg, var(--g-main), var(--lime-mid), var(--g-main));
+    }
+    .section-title { text-align:center; font-size:28px; font-weight:900; margin-bottom:8px; font-family:'Nunito','Inter',sans-serif; }
+    .section-title em { color:var(--g-main); font-style:normal; }
+    .section-sub   { text-align:center; color:var(--muted); font-size:14px; margin-bottom:48px; }
+    .steps { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(4,1fr); gap:28px; }
+    .step  { text-align:center; position:relative; }
+    .step:not(:last-child)::after { content:'→'; position:absolute; top:28px; right:-18px; color:var(--g-light); font-size:20px; font-weight:900; }
+    .step-icon { font-size:38px; margin-bottom:10px; display:block; }
+    .step-num  { width:44px; height:44px; background:linear-gradient(135deg,var(--g-main),#5ab030); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:17px; margin:0 auto 10px; box-shadow:0 4px 14px rgba(114,192,64,.4); }
+    .step-t { font-weight:800; font-size:13px; margin-bottom:6px; }
+    .step-d { font-size:12px; color:var(--muted); line-height:1.55; }
+
+    /* BENEFITS */
+    .benefits { background:var(--g-bg); padding:60px 40px; }
+    .ben-grid { max-width:960px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+    .ben-card  {
+      background:#fff; border-radius:18px; padding:28px 20px;
+      box-shadow:var(--shadow); text-align:center;
+      border:1px solid var(--border);
+      transition:transform .25s, box-shadow .25s;
+      position:relative; overflow:hidden;
+    }
+    .ben-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      background:linear-gradient(90deg, var(--g-main), var(--lime-mid));
+    }
+    .ben-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-lg); }
+    .ben-icon  { font-size:40px; margin-bottom:12px; display:block; }
+    .ben-title { font-weight:800; font-size:15px; margin-bottom:8px; color:var(--text); }
+    .ben-desc  { font-size:12.5px; color:var(--muted); line-height:1.65; }
+
+    footer {
+      background:var(--charcoal);
+      color:rgba(255,255,255,.65); padding:48px 40px 32px; font-size:12.5px;
+    }
+    .footer-inner { max-width:900px; margin:0 auto; }
+    .footer-top {
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:32px; flex-wrap:wrap; margin-bottom:32px;
+      padding-bottom:28px; border-bottom:1px solid rgba(255,255,255,.1);
+    }
+    .footer-brand { display:flex; flex-direction:column; gap:10px; }
+    .footer-logo {
+      font-family:'Nunito','Inter',sans-serif; font-weight:900; font-size:26px;
+      color:#fff; display:flex; align-items:center; gap:8px; text-decoration:none;
+    }
+    .footer-logo-icon {
+      width:34px; height:34px; background:var(--g-main); border-radius:9px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .footer-tagline { font-size:12.5px; color:rgba(255,255,255,.5); max-width:220px; line-height:1.5; }
+    .footer-links { display:flex; gap:48px; flex-wrap:wrap; }
+    .footer-col h4 { color:#fff; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+    .footer-col a { display:block; color:rgba(255,255,255,.55); text-decoration:none; font-size:12.5px; margin-bottom:8px; transition:color .2s; }
+    .footer-col a:hover { color:var(--g-main); }
+    .footer-bottom { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+    .footer-copy { font-size:11.5px; color:rgba(255,255,255,.35); }
+    .footer-badges { display:flex; gap:10px; align-items:center; }
+    .footer-badge {
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+      border-radius:20px; padding:4px 12px; font-size:11px; color:rgba(255,255,255,.5); font-weight:600;
+    }
+    footer a { color:var(--g-light); text-decoration:none; }
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-thumb { background:var(--g-light); border-radius:3px; }
+
+    /* ══════════════════════════════════════
+       SECTION INFO ARBRE — liquid dynamique
+       ══════════════════════════════════════ */
+    .tree-info-wrap {
+      overflow:hidden;
+      max-height:0;
+      opacity:0;
+      transition: max-height .6s cubic-bezier(0.4,0,0.2,1), opacity .4s ease, margin .4s ease;
+      margin-bottom:0;
+    }
+    .tree-info-wrap.open {
+      max-height:800px;
+      opacity:1;
+      margin-bottom:14px;
+    }
+
+    .tree-info-card {
+      background:#fff; border-radius:16px; padding:20px;
+      border:1px solid var(--border);
+      box-shadow:0 2px 12px rgba(0,0,0,.05);
+    }
+
+    /* Nouvelle organisation : 3 lignes full-width */
+    .info-block-title {
+      font-size:13px; font-weight:800; color:var(--text);
+      margin-bottom:12px; display:flex; align-items:center; gap:6px;
+    }
+    .info-tooltip {
+      width:16px; height:16px; background:var(--g-light); border-radius:50%;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:9px; color:#fff; font-weight:900; flex-shrink:0;
+    }
+
+    /* Ligne 1 — Usages côte à côte */
+    .usages-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .usage-item {
+      display:flex; gap:10px; align-items:flex-start;
+      background:var(--g-bg); border-radius:12px; padding:12px;
+    }
+    .usage-icon {
+      font-size:22px; width:38px; height:38px; background:#fff;
+      border-radius:9px; display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,.07);
+    }
+    .usage-title { font-size:11.5px; font-weight:800; color:var(--text); margin-bottom:3px; }
+    .usage-desc  { font-size:10.5px; color:var(--muted); line-height:1.5; }
+
+    /* Ligne 2 — Avantages : 4 cercles en ligne */
+    .advantages-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .adv-item { display:flex; flex-direction:column; align-items:center; gap:8px; }
+
+    .ring-wrap { position:relative; width:68px; height:68px; flex-shrink:0; }
+    .ring-wrap svg { width:68px; height:68px; transform:rotate(-90deg); }
+    .ring-track { fill:none; stroke:#e8ede9; stroke-width:5; }
+    .ring-fill  {
+      fill:none; stroke-width:5; stroke:var(--g-main); stroke-linecap:round;
+      stroke-dasharray:170; stroke-dashoffset:170;
+      transition:stroke-dashoffset 1.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .ring-center {
+      position:absolute; inset:0;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+    }
+    .ring-icon  { font-size:17px; line-height:1; }
+    .ring-score { font-size:10.5px; font-weight:900; color:var(--g-main); line-height:1; margin-top:2px; }
+    .adv-label  { font-size:10px; font-weight:700; color:var(--muted); text-align:center; line-height:1.3; }
+
+    /* Ligne 3 — CO2 + Sens côte à côte */
+    .co2-sens-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .info-sub-card { background:var(--g-bg); border-radius:12px; padding:14px; }
+
+    .co2-num  { font-size:32px; font-weight:900; color:var(--text); line-height:1; }
+    .co2-unit { font-size:11px; font-weight:700; color:var(--g-main); margin-left:4px; }
+    .co2-eq   { font-size:10px; color:var(--muted); margin:4px 0 10px; line-height:1.4; }
+    .co2-rows { border-top:1px solid var(--border); padding-top:10px; display:flex; flex-direction:column; gap:6px; }
+    .co2-row  { display:flex; justify-content:space-between; font-size:10.5px; }
+    .co2-row span:first-child { font-weight:700; color:var(--text); }
+    .co2-row span:last-child  { color:var(--muted); }
+
+    .sens-quote { color:var(--g-main); font-size:22px; font-weight:900; line-height:1; }
+    .sens-word  { font-size:20px; font-weight:900; color:var(--text); display:block; margin:4px 0 8px; }
+    .sens-desc  { font-size:11px; color:var(--muted); line-height:1.6; }
+
+    /* Latin name chip */
+    .latin-chip { display:inline-block; background:var(--g-pale); color:var(--g-main); font-size:10px; font-weight:600; font-style:italic; padding:3px 10px; border-radius:20px; margin-bottom:14px; }
+
+    /* ══════════════════════════════════════════
+       UPSELL CERTIFICAT — 3D + Iridescent
+       ══════════════════════════════════════════ */
+    .cert-upsell-card {
+      background:#fff; border-radius:16px; padding:20px;
+      border:1px solid var(--border); box-shadow:0 2px 12px rgba(0,0,0,.05);
+      margin-bottom:14px;
+    }
+    .cert-upsell-inner {
+      display:grid; grid-template-columns:200px 1fr; gap:20px; align-items:center;
+    }
+
+    /* ── Conteneur 3D ── */
+    .cert-scene {
+      perspective:700px;
+      width:200px; height:280px;
+      cursor:grab;
+    }
+    .cert-scene:active { cursor:grabbing; }
+
+    .cert-3d {
+      width:100%; height:100%;
+      position:relative;
+      transform-style:preserve-3d;
+      transform:perspective(700px) rotateX(0deg) rotateY(0deg);
+      transition:transform .08s ease-out;
+      border-radius:12px;
+      box-shadow:0 20px 60px rgba(0,0,0,.25), 0 4px 16px rgba(0,0,0,.15);
+    }
+
+    /* Image du certificat */
+    .cert-img {
+      width:100%; height:100%; border-radius:12px;
+      object-fit:cover; display:block;
+    }
+
+    /* Nom dynamique par-dessus l'image */
+    .cert-name-overlay {
+      position:absolute;
+      top:32%; left:50%; transform:translateX(-50%);
+      width:90%; text-align:center;
+      font-family:'Georgia','Times New Roman',serif;
+      font-size:11px; font-weight:700;
+      color:#b8860b;
+      text-shadow:0 1px 2px rgba(255,255,255,.6);
+      pointer-events:none;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      line-height:1.3;
+    }
+
+    /* Pays + date overlay */
+    .cert-meta-overlay {
+      position:absolute;
+      bottom:18%; left:50%; transform:translateX(-50%);
+      width:90%; text-align:center;
+      font-size:7px; font-weight:700; color:#2d6a4f;
+      pointer-events:none;
+      display:flex; justify-content:space-around;
+    }
+
+    /* ── Effet iridescent / holographique ── */
+    .cert-shine {
+      position:absolute; inset:0; border-radius:12px;
+      background:linear-gradient(
+        105deg,
+        transparent 20%,
+        rgba(255,219,112,.25) 30%,
+        rgba(132,255,200,.2) 40%,
+        rgba(120,200,255,.2) 50%,
+        rgba(200,120,255,.2) 60%,
+        rgba(255,120,150,.2) 70%,
+        transparent 80%
+      );
+      background-size:200% 200%;
+      mix-blend-mode:color-dodge;
+      opacity:0;
+      transition:opacity .3s;
+      pointer-events:none;
+      animation:irishift 4s linear infinite;
+    }
+    @keyframes irishift {
+      0%   { background-position:0% 50%; }
+      50%  { background-position:100% 50%; }
+      100% { background-position:0% 50%; }
+    }
+
+    /* Glare — reflet qui suit la souris */
+    .cert-glare {
+      position:absolute; inset:0; border-radius:12px;
+      background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.35) 0%, transparent 60%);
+      opacity:0; pointer-events:none;
+      transition:opacity .2s;
+      mix-blend-mode:overlay;
+    }
+
+    .cert-scene:hover .cert-shine { opacity:1; }
+    .cert-scene:hover .cert-glare  { opacity:1; }
+
+    /* Sticker holographique en bas à droite */
+    .cert-sticker {
+      position:absolute; bottom:5%; right:4%;
+      width:36px; height:36px; border-radius:50%;
+      background:conic-gradient(
+        #ff0080,#ff8800,#ffff00,#00ff80,#0080ff,#8000ff,#ff0080
+      );
+      box-shadow:0 2px 8px rgba(0,0,0,.3);
+      animation:spin-slow 6s linear infinite;
+      display:flex; align-items:center; justify-content:center;
+      font-size:16px;
+    }
+    @keyframes spin-slow { to { filter:hue-rotate(360deg); } }
+
+    /* ── Partie droite : texte + prix ── */
+    .cert-info { display:flex; flex-direction:column; gap:10px; }
+    .cert-badge {
+      display:inline-flex; align-items:center; gap:6px;
+      background:linear-gradient(135deg,#fef9e7,#fdebd0);
+      border:1px solid #f0c060; border-radius:20px;
+      padding:4px 12px; font-size:11px; font-weight:700; color:#b8860b;
+      width:fit-content;
+    }
+    .cert-title { font-size:16px; font-weight:900; color:var(--text); line-height:1.2; }
+    .cert-desc  { font-size:11.5px; color:var(--muted); line-height:1.6; }
+
+    .cert-name-input-wrap { display:flex; flex-direction:column; gap:4px; }
+    .cert-name-input-wrap label { font-size:10.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+    .cert-name-input {
+      border:1.5px solid var(--border); border-radius:10px;
+      padding:9px 12px; font-size:13px; font-family:'Inter',sans-serif;
+      color:var(--text); outline:none; transition:border-color .2s;
+      width:100%;
+    }
+    .cert-name-input:focus { border-color:#b8860b; box-shadow:0 0 0 3px rgba(184,134,11,.1); }
+
+    .cert-price-row { display:flex; align-items:center; justify-content:space-between; }
+    .cert-price { font-size:22px; font-weight:900; color:var(--g-main); }
+    .cert-price-note { font-size:10.5px; color:var(--muted); }
+
+    .cert-title-text { font-size:16px; font-weight:900; color:var(--text); line-height:1.25; }
+    .cert-perks { list-style:none; display:flex; flex-direction:column; gap:4px; }
+    .cert-perks li { font-size:11.5px; color:var(--muted); }
+
+    .cert-add-btn {
+      background:linear-gradient(135deg,#c9a227,#e8c44a);
+      color:#5c3d00; border:none; border-radius:12px;
+      padding:13px; font-size:13.5px; font-weight:900; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:7px;
+      transition:all .3s; box-shadow:0 4px 16px rgba(201,162,39,.35);
+    }
+    .cert-add-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(201,162,39,.5); }
+    .cert-add-btn.added { background:var(--g-pale); color:var(--g-main); }
+
+    /* ══════════════════════════════════════════
+       SECTION CADEAU
+       ══════════════════════════════════════════ */
+    .gift-card {
+      background:#fff; border-radius:16px; padding:20px;
+      border:1px solid var(--border); box-shadow:0 2px 12px rgba(0,0,0,.05);
+      margin-bottom:14px;
+    }
+
+    /* Toggle oui/non */
+    .gift-toggle-row {
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .gift-toggle-label {
+      display:flex; align-items:center; gap:10px;
+    }
+    .gift-toggle-label .gift-icon-big {
+      font-size:28px; line-height:1;
+      animation: gift-wiggle 2.5s ease-in-out infinite;
+    }
+    @keyframes gift-wiggle {
+      0%,100% { transform:rotate(-5deg); }
+      50%      { transform:rotate(5deg); }
+    }
+    .gift-toggle-label .gift-head-text { font-size:15px; font-weight:800; color:var(--text); }
+    .gift-toggle-label .gift-sub-text  { font-size:11.5px; color:var(--muted); margin-top:1px; }
+
+    .gift-yn-btns { display:flex; gap:8px; }
+    .gift-yn-btn {
+      border:2px solid var(--border); background:#fff; border-radius:10px;
+      padding:7px 20px; font-size:13px; font-weight:700; cursor:pointer;
+      color:var(--muted); transition:all .2s;
+    }
+    .gift-yn-btn.active-yes {
+      border-color:#e74c6a; background:#fff0f4; color:#e74c6a;
+    }
+    .gift-yn-btn.active-no {
+      border-color:var(--g-main); background:var(--g-pale); color:var(--g-main);
+    }
+
+    /* Boîte cadeau animée */
+    .gift-box-wrap {
+      max-height:0; overflow:hidden;
+      transition:max-height .55s cubic-bezier(.4,0,.2,1), opacity .35s ease, margin-top .35s ease;
+      opacity:0; margin-top:0;
+    }
+    .gift-box-wrap.open {
+      max-height:600px; opacity:1; margin-top:18px;
+    }
+
+    .gift-box {
+      position:relative;
+      background:linear-gradient(145deg,#fff5f7,#fff);
+      border:2px dashed #f4a0b0;
+      border-radius:18px;
+      padding:22px 20px 20px;
+      overflow:hidden;
+    }
+
+    /* Ruban vertical */
+    .gift-ribbon-v {
+      position:absolute; top:0; bottom:0; left:50%; transform:translateX(-50%);
+      width:3px; background:linear-gradient(180deg,#e74c6a,#f78fb3);
+      pointer-events:none;
+    }
+    /* Ruban horizontal */
+    .gift-ribbon-h {
+      position:absolute; left:0; right:0; top:44px;
+      height:3px; background:linear-gradient(90deg,#e74c6a,#f78fb3,#e74c6a);
+      pointer-events:none;
+    }
+    /* Nœud central */
+    .gift-bow {
+      position:absolute; top:24px; left:50%; transform:translateX(-50%);
+      font-size:28px; line-height:1;
+      filter:drop-shadow(0 2px 6px rgba(231,76,106,.4));
+      pointer-events:none;
+      animation:bow-pulse 2s ease-in-out infinite;
+    }
+    @keyframes bow-pulse {
+      0%,100% { transform:translateX(-50%) scale(1); }
+      50%      { transform:translateX(-50%) scale(1.12); }
+    }
+
+    /* Confettis décoratifs */
+    .gift-confetti {
+      position:absolute; top:0; left:0; right:0; bottom:0;
+      pointer-events:none; overflow:hidden; border-radius:16px;
+    }
+    .gift-confetti span {
+      position:absolute; font-size:14px; opacity:.15;
+      animation:confetti-fall 6s linear infinite;
+    }
+    @keyframes confetti-fall {
+      0%   { transform:translateY(-20px) rotate(0deg);   opacity:.18; }
+      100% { transform:translateY(300px) rotate(360deg); opacity:0; }
+    }
+
+    /* Contenu intérieur */
+    .gift-content {
+      position:relative; z-index:2;
+      padding-top:28px;
+      display:flex; flex-direction:column; gap:14px;
+    }
+
+    .gift-field-label {
+      font-size:11px; font-weight:700; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.6px; margin-bottom:5px;
+    }
+    .gift-input {
+      width:100%; border:1.5px solid #f4a0b0; border-radius:10px;
+      padding:10px 13px; font-size:13px; font-family:'Inter',sans-serif;
+      color:var(--text); outline:none; background:#fff;
+      transition:border-color .2s, box-shadow .2s;
+    }
+    .gift-input:focus { border-color:#e74c6a; box-shadow:0 0 0 3px rgba(231,76,106,.1); }
+
+    .gift-input::placeholder { color:#cba5af; }
+
+    .gift-wrapping-row {
+      display:flex; gap:10px; flex-wrap:wrap;
+    }
+    .gift-wrap-opt {
+      flex:1; min-width:80px; border:2px solid var(--border);
+      border-radius:12px; padding:10px 8px; text-align:center;
+      cursor:pointer; transition:all .2s; background:#fff;
+    }
+    .gift-wrap-opt:hover { border-color:#f4a0b0; }
+    .gift-wrap-opt.selected { border-color:#e74c6a; background:#fff0f4; }
+    .gift-wrap-opt .wo-icon { font-size:22px; display:block; margin-bottom:4px; }
+    .gift-wrap-opt .wo-name { font-size:10.5px; font-weight:700; color:var(--text); }
+    .gift-wrap-opt .wo-price { font-size:10px; color:var(--muted); }
+
+    .gift-note {
+      display:flex; align-items:center; gap:7px;
+      background:#fff0f4; border-radius:10px; padding:10px 13px;
+      font-size:11.5px; color:#c0304e; font-weight:600;
+    }
+
+    /* ══════════════════════════════════════════════════
+       RESPONSIVE — MOBILE (≤ 640px)
+       ══════════════════════════════════════════════════ */
+    @media (max-width: 640px) {
+
+      /* ── Header ── */
+      header { padding:0 16px; height:56px; }
+      nav    { display:none; }
+      .trustpilot { display:none; }
+      .cart-pill  { padding:7px 14px; font-size:12px; }
+      .logo-wordmark { font-size:18px; }
+      .logo-sub { display:none; }
+      .logo-icon { width:30px; height:30px; border-radius:8px; }
+
+      /* ── Footer mobile ── */
+      footer { padding:32px 16px 24px; }
+      .footer-top { flex-direction:column; gap:24px; }
+      .footer-links { gap:24px; }
+      .footer-bottom { flex-direction:column; align-items:flex-start; gap:10px; }
+      .footer-badges { flex-wrap:wrap; }
+
+      /* ── Bande social proof ── */
+      .sp-bar { padding:8px 16px; gap:14px; justify-content:flex-start; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+      .sp-bar::-webkit-scrollbar { display:none; }
+      .sp-item { white-space:nowrap; font-size:11.5px; flex-shrink:0; }
+
+      /* ── Breadcrumb ── */
+      .breadcrumb { padding:10px 16px; font-size:11.5px; }
+
+      /* ── Layout principal : 1 colonne ── */
+      .main-wrap {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 0 12px;
+        margin-bottom: 40px;
+      }
+
+      /* ── Preview ── */
+      .preview-col { position:static; }
+      .preview-scene-box { padding:14px 14px 18px; border-radius:18px; }
+      .scene-frame { max-width:280px; margin:0 auto; }
+      .trust-grid { grid-template-columns:repeat(3,1fr); gap:6px; margin-top:10px; }
+      .trust-tile { padding:8px 4px; font-size:9.5px; }
+      .trust-tile span:first-child { font-size:15px; }
+
+      /* ── Titre & prix ── */
+      .prod-title  { font-size:22px; }
+      .price-big   { font-size:34px; }
+      .prod-badges { gap:5px; }
+      .prod-badge  { font-size:10.5px; padding:3px 8px; }
+
+      /* ── Cards config ── */
+      .cfg-card { padding:14px; border-radius:13px; }
+
+      /* ── Grille arbres : 3 col conservées, plus compactes ── */
+      .tree-grid { gap:6px; }
+      .tree-opt-info { padding:5px 6px; }
+      .tree-opt-name  { font-size:9.5px; }
+      .tree-opt-price { font-size:9px; }
+
+      /* ── Pays ── */
+      .country-wrap { gap:6px; }
+      .country-btn  { padding:9px 4px; font-size:11px; gap:4px; border-radius:10px; }
+      .c-flag-img   { width:22px; height:16px; }
+
+      /* ── Globe ── */
+      #globeCanvas { width:180px; height:180px; }
+
+      /* ── Infos arbre ── */
+      .usages-row        { grid-template-columns:1fr; }
+      .advantages-grid   { grid-template-columns:repeat(2,1fr); gap:10px; }
+      .co2-sens-row      { grid-template-columns:1fr; }
+
+      /* ── Peluches ── */
+      .peluche-row { gap:7px; }
+      .pel-card    { padding:10px 6px; }
+      .pel-img     { width:60px; height:60px; }
+      .pel-name    { font-size:9.5px; }
+      .pel-price   { font-size:12px; }
+
+      /* ── Certificat ── */
+      .cert-upsell-inner { grid-template-columns:1fr; gap:16px; }
+      .cert-scene  { width:160px; height:224px; margin:0 auto; }
+      .cert-title  { font-size:14px; }
+      .cert-price  { font-size:18px; }
+
+      /* ── Cadeau ── */
+      .gift-toggle-row { flex-direction:column; align-items:flex-start; gap:10px; }
+      .gift-yn-btns    { width:100%; }
+      .gift-yn-btn     { flex:1; text-align:center; padding:7px 10px; }
+
+      /* ── Récap prix ── */
+      .price-summary { padding:12px 14px; }
+      .ps-row        { font-size:12.5px; }
+      .ps-total      { font-size:16px; }
+
+      /* ── CTA ── */
+      .cta-btn { padding:16px; font-size:15px; border-radius:13px; }
+
+      /* ── HOW IT WORKS ── */
+      .hiw { padding:40px 16px; margin-top:30px; }
+      .section-title { font-size:20px; }
+      .steps { grid-template-columns:repeat(2,1fr); gap:16px; }
+      .step:not(:last-child)::after { display:none; }
+
+      /* ── Bénéfices ── */
+      .benefits { padding:36px 16px; }
+      .ben-grid { grid-template-columns:1fr; gap:12px; }
+
+      /* ── Footer ── */
+      footer { padding:20px 16px; font-size:11.5px; }
+    }
+
+    /* ── Très petits écrans (≤ 360px) ── */
+    @media (max-width: 360px) {
+      .country-btn { font-size:10px; padding:8px 3px; }
+      .tree-grid   { grid-template-columns:repeat(2,1fr); }
+      .advantages-grid { grid-template-columns:repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="banner">🌙 Qu'Allah accepte votre don — Chaque arbre planté est une Sadaqa Jariya qui vous accompagne pour l'éternité</div>
+
+<header>
+  <a href="#" class="logo">
+    <div class="logo-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M12 20V13" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M12 13C12 8.5 16.5 6 20 7C19 11 15.5 13 12 13Z" fill="#fff"/>
+        <path d="M12 13C12 8.5 7.5 6 4 7C5 11 8.5 13 12 13Z" fill="rgba(255,255,255,.75)"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-wordmark">
+        <span class="lw-plant">Plant</span><span class="lw-oo">oo</span>
+      </div>
+      <span class="logo-sub">by Well Solidarity</span>
+    </div>
+  </a>
+  <nav>
+    <a href="#">Construire un puits ▾</a>
+    <a href="#">Planter un arbre ▾</a>
+    <a href="#">Qui sommes-nous ?</a>
+    <a href="#">Contact</a>
+  </nav>
+  <div class="header-right">
+    <div class="trustpilot"><span class="tp-stars">★★★★★</span> <strong>4.9</strong>/5 · 1000+ avis</div>
+    <button class="cart-pill" id="cartPill">🛒 Panier <span id="cartCount">(0)</span></button>
+  </div>
+</header>
+
+<div class="sp-bar">
+  <div class="sp-item">🌱 +20 000 arbres plantés</div>
+  <div class="sp-item">📍 Coordonnées GPS garanties</div>
+  <div class="sp-item">📸 Photos & vidéos de votre arbre</div>
+  <div class="sp-item">⚡ Planté sous 21 jours</div>
+  <div class="sp-item">🤲 Sadaqa Jariya certifiée</div>
+</div>
+
+<div class="breadcrumb">
+  <a href="#">Accueil</a> › <a href="#">Boutique</a> › <a href="#">Arbres</a> › <span>Arbres Fruitiers</span>
+</div>
+
+<div class="main-wrap">
+
+  <!-- ═══ PREVIEW ═══ -->
+  <div class="preview-col">
+    <div class="preview-scene-box">
+
+      <!-- Image de la scène + pancarte overlay -->
+      <div class="scene-frame">
+        <img class="scene-img" id="sceneImg" src="images/arbres/manguier.jpg" alt="Arbre fruitier" />
+
+        <!-- Pancarte personnalisée par-dessus l'image -->
+        <div class="sign-overlay">
+          <div class="sign-board">
+            <div class="sign-line-top"  id="previewTreeName">MON MANGUIER</div>
+            <div class="sign-line-from">DE : <span id="previewCountry">BANGLADESH</span></div>
+            <div class="sign-hr"></div>
+            <div class="sign-line-msg"  id="previewMsg">Pour Maman ! Avec Amour. 🌿</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ombre sous l'image -->
+      <div class="scene-shadow"></div>
+
+      <!-- Badge pays -->
+      <div class="country-badge-preview" id="countryBadge">🇧🇩 Planté au Bangladesh</div>
+    </div>
+
+    <div class="trust-grid">
+      <div class="trust-tile"><span>📍</span><span>GPS envoyé</span></div>
+      <div class="trust-tile"><span>📸</span><span>Photos & vidéos</span></div>
+      <div class="trust-tile"><span>🌱</span><span>Sous 21 jours</span></div>
+      <div class="trust-tile"><span>📜</span><span>Certificat</span></div>
+      <div class="trust-tile"><span>🤲</span><span>Sadaqa Jariya</span></div>
+      <div class="trust-tile"><span>🔒</span><span>Paiement sécurisé</span></div>
+    </div>
+  </div>
+
+  <!-- ═══ CONFIG ═══ -->
+  <div class="config-col">
+
+    <div class="prod-badges">
+      <span class="prod-badge">🌿 Sadaqa Jariya</span>
+      <span class="prod-badge">🏡 Nourrit des familles</span>
+      <span class="prod-badge">🌍 Impact durable</span>
+      <span class="prod-badge">⭐ +1 000 avis Trustpilot</span>
+    </div>
+    <h1 class="prod-title">Plantez un Arbre Fruitier 🌱</h1>
+    <div class="rating-row">
+      <span class="stars-row">★★★★★</span>
+      <span class="rating-txt"><strong>4.9</strong>/5 · 1 000+ avis vérifiés · Trustpilot</span>
+    </div>
+    <div class="price-big"><span id="headerPrice">28</span>€<span class="price-suffix">/ arbre</span></div>
+    <div class="price-note">Prix de base — les options s'ajoutent ci-dessous</div>
+
+    <!-- 1. Arbre -->
+    <div class="cfg-card">
+      <div class="cfg-card-head">
+        <span class="cfg-card-icon">🌳</span>
+        <span class="cfg-card-title">Type d'arbre fruitier</span>
+      </div>
+      <div class="tree-grid" id="treeGrid"></div>
+    </div>
+
+    <!-- INFO ARBRE — section dynamique -->
+    <div class="tree-info-wrap" id="treeInfoWrap">
+      <div class="tree-info-card">
+        <div id="latinChip" class="latin-chip">Mangifera indica</div>
+
+        <!-- Ligne 1 : Utilisations locales côte à côte -->
+        <div class="info-block-title">Utilisations locales <span class="info-tooltip">i</span></div>
+        <div class="usages-row" id="usagesList"></div>
+
+        <!-- Ligne 2 : 4 avantages en ligne -->
+        <div class="info-block-title" style="margin-top:18px">Avantages <span class="info-tooltip">i</span></div>
+        <div class="advantages-grid" id="advantagesGrid"></div>
+
+        <!-- Ligne 3 : CO2 + Sens -->
+        <div class="co2-sens-row" style="margin-top:18px">
+          <div class="info-sub-card">
+            <div class="info-block-title" style="margin-bottom:8px">CO₂ absorbé <span class="info-tooltip">i</span></div>
+            <div id="co2Block"></div>
+          </div>
+          <div class="info-sub-card">
+            <div class="info-block-title" style="margin-bottom:8px">Sens <span class="info-tooltip">i</span></div>
+            <div id="sensBlock"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 2. Pays -->
+    <div class="cfg-card">
+      <div class="cfg-card-head">
+        <span class="cfg-card-icon">📍</span>
+        <span class="cfg-card-title">Pays de plantation</span>
+      </div>
+      <div class="country-wrap" id="countryWrap"></div>
+      <div id="globeWrap">
+        <canvas id="globeCanvas"></canvas>
+        <div id="countryInfo"></div>
+      </div>
+    </div>
+
+    <!-- 3. Âge -->
+    <div class="cfg-card">
+      <div class="cfg-card-head">
+        <span class="cfg-card-icon">🗓️</span>
+        <span class="cfg-card-title">Âge de l'arbre</span>
+      </div>
+      <div class="age-row">
+        <span class="age-lbl">Sélectionnez l'âge :</span>
+        <span><span class="age-val" id="ageVal">3</span><span class="age-unit">ans</span></span>
+      </div>
+      <input type="range" id="ageSlider" min="1" max="10" value="3" />
+      <div class="age-marks">
+        <span class="age-mark">1 an</span><span class="age-mark">3 ans</span>
+        <span class="age-mark">5 ans</span><span class="age-mark">8 ans</span>
+        <span class="age-mark">10 ans</span>
+      </div>
+    </div>
+
+    <!-- 4. Pancarte -->
+    <div class="cfg-card">
+      <div class="cfg-card-head">
+        <span class="cfg-card-icon">✏️</span>
+        <span class="cfg-card-title">Personnalisation de la pancarte</span>
+      </div>
+      <div class="fields-stack">
+        <div>
+          <label class="field-lbl">Nom sur la pancarte</label>
+          <input class="field-input" id="nameInput" type="text" placeholder="ex : Pour Maman, Au nom de Ahmed…" maxlength="30" />
+          <div class="char-cnt"><span id="nameCount">0</span>/30</div>
+        </div>
+        <div>
+          <label class="field-lbl">Message personnel (optionnel)</label>
+          <textarea class="field-ta" id="msgInput" placeholder="ex : Que Allah l'accepte comme Sadaqa Jariya…" maxlength="80"></textarea>
+          <div class="char-cnt"><span id="msgCount">0</span>/80</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Peluches -->
+    <div class="cfg-card">
+      <div class="cfg-card-head">
+        <span class="cfg-card-icon">🧸</span>
+        <span class="cfg-card-title">Peluche Mignonne — Cadeau Optionnel</span>
+      </div>
+      <div class="peluche-row" id="pelucheRow"></div>
+    </div>
+
+    <!-- 6. UPSELL CERTIFICAT -->
+    <div class="cert-upsell-card">
+      <div class="cfg-card-head">
+        <span class="cfg-card-icon">📜</span>
+        <span class="cfg-card-title">Certificat de Bienfaisance — Édition Limitée</span>
+      </div>
+      <div class="cert-upsell-inner">
+        <!-- Preview 3D -->
+        <div class="cert-scene" id="certScene">
+          <div class="cert-3d" id="cert3d">
+            <img class="cert-img" src="images/certificat.jpg.webp" alt="Certificat"
+                 onerror="this.src='https://placehold.co/200x280/2d6a4f/white?text=Certificat+Officiel'" />
+            <div class="cert-name-overlay" id="certNameOverlay">Votre Nom Ici</div>
+            <div class="cert-shine"></div>
+            <div class="cert-glare" id="certGlare"></div>
+            <div class="cert-sticker">✦</div>
+          </div>
+        </div>
+        <!-- Info droite -->
+        <div class="cert-info">
+          <div class="cert-badge">✨ Édition Limitée</div>
+          <div class="cert-title-text">Certificat Officiel<br>de Plantation</div>
+          <div class="cert-desc">Un certificat holographique numéroté, imprimé sur papier premium. Votre nom gravé, l'espèce de l'arbre et les coordonnées GPS de plantation.</div>
+          <ul class="cert-perks">
+            <li>🏅 Numéro de série unique</li>
+            <li>🌿 Espèce &amp; pays de plantation</li>
+            <li>📍 Coordonnées GPS de votre arbre</li>
+            <li>✉️ Livré sous 5 jours ouvrés</li>
+          </ul>
+          <div class="cert-name-input-wrap">
+            <label style="font-size:11.5px;font-weight:700;color:var(--muted);display:block;margin-bottom:5px;">Nom sur le certificat</label>
+            <input type="text" id="certNameInput" class="cert-name-input" placeholder="Ex : Marie Dupont" maxlength="30" />
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+            <div>
+              <div class="cert-price-note">Prix du certificat</div>
+              <div style="font-size:18px;font-weight:900;color:#c9a227;">+ 9 €</div>
+            </div>
+            <button class="cert-add-btn" id="certAddBtn">Ajouter au panier</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. CADEAU -->
+    <div class="gift-card">
+      <div class="gift-toggle-row">
+        <div class="gift-toggle-label">
+          <span class="gift-icon-big">🎁</span>
+          <div>
+            <div class="gift-head-text">C'est un cadeau ?</div>
+            <div class="gift-sub-text">Ajoutez un emballage & un message personnalisé</div>
+          </div>
+        </div>
+        <div class="gift-yn-btns">
+          <button class="gift-yn-btn" id="giftNo"  onclick="setGift(false)">Non</button>
+          <button class="gift-yn-btn" id="giftYes" onclick="setGift(true)">Oui 🎀</button>
+        </div>
+      </div>
+
+      <!-- Boîte cadeau dépliable -->
+      <div class="gift-box-wrap" id="giftBoxWrap">
+        <div class="gift-box">
+          <!-- Décorations -->
+          <div class="gift-confetti">
+            <span style="left:8%;animation-delay:0s;animation-duration:5s">🌸</span>
+            <span style="left:22%;animation-delay:1.2s;animation-duration:7s">✨</span>
+            <span style="left:40%;animation-delay:0.5s;animation-duration:6s">🌿</span>
+            <span style="left:60%;animation-delay:2s;animation-duration:5.5s">💫</span>
+            <span style="left:78%;animation-delay:0.8s;animation-duration:8s">🌸</span>
+            <span style="left:90%;animation-delay:1.8s;animation-duration:6.5s">✨</span>
+          </div>
+          <div class="gift-ribbon-v"></div>
+          <div class="gift-ribbon-h"></div>
+          <div class="gift-bow">🎀</div>
+
+          <!-- Contenu -->
+          <div class="gift-content">
+            <!-- À qui ? -->
+            <div>
+              <div class="gift-field-label">🎁 Pour qui est ce cadeau ?</div>
+              <input type="text" class="gift-input" id="giftRecipient" placeholder="Ex : Maman, Mon père, Ahmed…" maxlength="40" />
+            </div>
+
+            <!-- Message cadeau -->
+            <div>
+              <div class="gift-field-label">💌 Message d'accompagnement</div>
+              <textarea class="gift-input" id="giftMessage" rows="3"
+                placeholder="Ex : Puisse cet arbre être une Sadaqa Jariya pour toi. Avec tout mon amour ❤️"
+                maxlength="120" style="resize:none;"></textarea>
+            </div>
+
+            <!-- Emballage -->
+            <div>
+              <div class="gift-field-label">🎀 Emballage cadeau</div>
+              <div class="gift-wrapping-row">
+                <div class="gift-wrap-opt" onclick="selectWrapping('none', this)">
+                  <span class="wo-icon">📦</span>
+                  <div class="wo-name">Sans</div>
+                  <div class="wo-price">gratuit</div>
+                </div>
+                <div class="gift-wrap-opt selected" id="wrapDefault" onclick="selectWrapping('standard', this)">
+                  <span class="wo-icon">🎁</span>
+                  <div class="wo-name">Standard</div>
+                  <div class="wo-price">+3 €</div>
+                </div>
+                <div class="gift-wrap-opt" onclick="selectWrapping('premium', this)">
+                  <span class="wo-icon">✨</span>
+                  <div class="wo-name">Premium</div>
+                  <div class="wo-price">+6 €</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="gift-note">
+              💌 Une carte imprimée avec votre message sera glissée dans le colis
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Récap -->
+    <div class="price-summary">
+      <div class="ps-row"><span id="sumTreeName">Manguier</span><span id="sumTreePrice">28 €</span></div>
+      <div class="ps-row" id="sumPelRow" style="display:none"><span id="sumPelName">Peluche</span><span id="sumPelPrice">14 €</span></div>
+      <div class="ps-row" id="sumCertRow" style="display:none"><span>📜 Certificat Édition Limitée</span><span>9 €</span></div>
+      <div class="ps-row" id="sumGiftRow" style="display:none"><span id="sumGiftLabel">🎁 Emballage cadeau</span><span id="sumGiftPrice">3 €</span></div>
+      <div class="ps-total"><span>Total</span><span id="sumTotal">28 €</span></div>
+    </div>
+
+    <button class="cta-btn" id="ctaBtn">🛒 Ajouter au Panier →</button>
+    <div class="secure-note">🔒 Paiement sécurisé SSL · CB, PayPal, Virement · Satisfait ou remboursé</div>
+  </div>
+</div>
+
+<div class="hiw">
+  <div class="section-title">Comment fonctionne <em>Plantoo</em> ?</div>
+  <div class="section-sub">De votre commande à la pousse de votre arbre — un processus 100% transparent</div>
+  <div class="steps">
+    <div class="step"><span class="step-icon">🌳</span><div class="step-num">1</div><div class="step-t">Choisissez votre arbre</div><div class="step-d">Espèce, pays, âge et message personnalisé sur la pancarte.</div></div>
+    <div class="step"><span class="step-icon">🌱</span><div class="step-num">2</div><div class="step-t">Plantation sous 21 jours</div><div class="step-d">Nos agriculteurs partenaires plantent votre arbre localement.</div></div>
+    <div class="step"><span class="step-icon">📍</span><div class="step-num">3</div><div class="step-t">GPS + preuves envoyées</div><div class="step-d">Photos, vidéos et coordonnées GPS de votre arbre par email.</div></div>
+    <div class="step"><span class="step-icon">🤲</span><div class="step-num">4</div><div class="step-t">Héritage éternel</div><div class="step-d">Votre arbre produit des fruits et génère des bénédictions pour des décennies.</div></div>
+  </div>
+</div>
+
+<div class="benefits">
+  <div class="section-title">Pourquoi choisir <em>Plantoo</em> ?</div>
+  <div class="section-sub">Chaque arbre planté a un impact réel, mesurable et spirituellement puissant</div>
+  <div class="ben-grid">
+    <div class="ben-card"><span class="ben-icon">🥭</span><div class="ben-title">Sécurité alimentaire locale</div><div class="ben-desc">Vos arbres fruitiers nourrissent directement les familles locales pendant des décennies entières.</div></div>
+    <div class="ben-card"><span class="ben-icon">🌍</span><div class="ben-title">Impact carbone positif</div><div class="ben-desc">Chaque arbre absorbe du CO₂, protège les sols et renforce la biodiversité de la région.</div></div>
+    <div class="ben-card"><span class="ben-icon">🤲</span><div class="ben-title">Sadaqa Jariya vivante</div><div class="ben-desc">Une aumône continue qui porte vos bénédictions — pour vous, vos proches, vos défunts.</div></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="#" class="footer-logo">
+          <div class="footer-logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 20V13" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M12 13C12 8.5 16.5 6 20 7C19 11 15.5 13 12 13Z" fill="#fff"/>
+              <path d="M12 13C12 8.5 7.5 6 4 7C5 11 8.5 13 12 13Z" fill="rgba(255,255,255,.75)"/>
+            </svg>
+          </div>
+          Plantoo
+        </a>
+        <div class="footer-tagline">Planter un arbre fruitier, c'est laisser un héritage vivant pour ceux que vous aimez.</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;">by Well Solidarity · ONG internationale</div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Nos arbres</h4>
+          <a href="#">Manguier</a>
+          <a href="#">Avocatier</a>
+          <a href="#">Oranger</a>
+          <a href="#">Cocotier</a>
+        </div>
+        <div class="footer-col">
+          <h4>À propos</h4>
+          <a href="#">Notre mission</a>
+          <a href="#">Pays partenaires</a>
+          <a href="#">Témoignages</a>
+          <a href="#">Contact</a>
+        </div>
+        <div class="footer-col">
+          <h4>Légal</h4>
+          <a href="#">Mentions légales</a>
+          <a href="#">Confidentialité</a>
+          <a href="#">CGV</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2025 Plantoo · Well Solidarity. Tous droits réservés.</div>
+      <div class="footer-badges">
+        <span class="footer-badge">🔒 Paiement sécurisé</span>
+        <span class="footer-badge">★★★★★ Trustpilot 4.9</span>
+        <span class="footer-badge">🌱 +20 000 arbres</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   📁 CHEMINS DES IMAGES — modifiez uniquement ce bloc
+   ══════════════════════════════════════════════════════ */
+const IMG = {
+  /* Image pleine scène affichée dans le preview */
+  trees: {
+    manguier:   'images/arbres/manguier.jpg.jpeg',
+    avocatier:  'images/arbres/avocatier.jpg.png',
+    oranger:    'images/arbres/oranger.jpg.png',
+    /* Ajoutez les autres au fur et à mesure : */
+    cocotier:   'images/arbres/cocotier.jpg',
+    citronnier: 'images/arbres/citronnier.jpg',
+    jacquier:   'images/arbres/jacquier.jpg',
+  },
+  /* Peluches (cartes + éventuel overlay futur) */
+  peluches: {
+    banane:  'images/peluches/Peluche_Banane.jpg.png',
+    mangue:  'images/peluches/peluche-mangue.png',
+    fraise:  'images/peluches/peluche-fraise.png',
+  },
+};
+
+/* Placeholder automatique si image absente */
+const ph = (label, color='4caf63') =>
+  `https://placehold.co/400x400/${color}/white?text=${encodeURIComponent(label)}`;
+
+/* ══════════════════════════════════════════════════════
+   DONNÉES INFO ARBRE
+   ══════════════════════════════════════════════════════ */
+const TREE_INFO = {
+  manguier: {
+    latin: 'Mangifera indica',
+    usages: [
+      { icon:'💄', title:'Cosmétologie', desc:'Les matières premières utilisées pour faire des crèmes ou des poudres sont extraites de ses fleurs, fruits et feuilles.' },
+      { icon:'🛒', title:'Consommation & vente', desc:'Les fruits, les graines et/ou les feuilles sont consommés par les familles ou vendus sur les marchés locaux.' },
+    ],
+    advantages: [
+      { label:'Sécurité alimentaire',      score:9 },
+      { label:'Développement économique',   score:10 },
+      { label:'Absorption de CO₂',          score:8 },
+      { label:'Protection environnementale',score:7 },
+    ],
+    co2: { total:700, period:'0 ans / 10 ans', annual:'70 Kg', equiv:'795 kg de Paniers de fraises' },
+    sens: { word:'Bonheur', desc:'Par sa couleur, son parfum et son goût, la mangue est le fruit du soleil et du bonheur.' },
+  },
+  avocatier: {
+    latin: 'Persea americana',
+    usages: [
+      { icon:'🥗', title:'Alimentation', desc:'Le fruit riche en bonnes graisses est consommé frais ou transformé en huile alimentaire pour les familles locales.' },
+      { icon:'💆', title:'Cosmétologie', desc:"L'huile d'avocat est utilisée pour la fabrication de crèmes hydratantes, savons et produits capillaires naturels." },
+    ],
+    advantages: [
+      { label:'Sécurité alimentaire',      score:8 },
+      { label:'Développement économique',   score:9 },
+      { label:'Absorption de CO₂',          score:7 },
+      { label:'Protection environnementale',score:8 },
+    ],
+    co2: { total:600, period:'0 ans / 10 ans', annual:'60 Kg', equiv:'680 kg de déchets organiques' },
+    sens: { word:'Fertilité', desc:"L'avocat symbolise la fertilité et la prospérité. Son arbre persistant représente la vie qui s'épanouit en toutes saisons." },
+  },
+  oranger: {
+    latin: 'Citrus sinensis',
+    usages: [
+      { icon:'🍹', title:'Alimentation & boissons', desc:'Les fruits riches en vitamine C sont consommés frais, en jus ou transformés en confitures pour les familles et les marchés.' },
+      { icon:'🌸', title:'Parfumerie & aromathérapie', desc:"L'huile essentielle de fleur d'oranger (néroli) est très recherchée pour la parfumerie et les soins naturels." },
+    ],
+    advantages: [
+      { label:'Sécurité alimentaire',      score:9 },
+      { label:'Développement économique',   score:8 },
+      { label:'Absorption de CO₂',          score:6 },
+      { label:'Protection environnementale',score:7 },
+    ],
+    co2: { total:500, period:'0 ans / 10 ans', annual:'50 Kg', equiv:'570 kg de déchets plastiques' },
+    sens: { word:'Joie', desc:"L'oranger est le symbole universel de la joie et de la générosité. Son fruit lumineux illumine les marchés et les foyers du monde entier." },
+  },
+  cocotier: {
+    latin: 'Cocos nucifera',
+    usages: [
+      { icon:'🥛', title:'Alimentation', desc:"L'eau et la chair de coco sont consommées fraîches ou transformées en huile et lait de coco très appréciés localement." },
+      { icon:'🪣', title:'Artisanat & construction', desc:'Les feuilles, le bois et la fibre de coco servent à construire des abris, des paniers et des objets artisanaux.' },
+    ],
+    advantages: [
+      { label:'Sécurité alimentaire',      score:9 },
+      { label:'Développement économique',   score:9 },
+      { label:'Absorption de CO₂',          score:6 },
+      { label:'Protection environnementale',score:8 },
+    ],
+    co2: { total:450, period:'0 ans / 10 ans', annual:'45 Kg', equiv:'510 kg de déchets plastiques' },
+    sens: { word:'Abondance', desc:"Le cocotier est surnommé l'arbre de vie. Il offre eau, nourriture, matériaux et ombre — une bénédiction pour les communautés côtières." },
+  },
+  citronnier: {
+    latin: 'Citrus limon',
+    usages: [
+      { icon:'🍋', title:'Alimentation & santé', desc:'Riche en vitamine C, le citron est utilisé en cuisine, en médecine traditionnelle et pour la conservation alimentaire.' },
+      { icon:'🧴', title:'Cosmétologie', desc:"L'huile essentielle de zeste de citron est très utilisée dans les produits de beauté et les nettoyants naturels." },
+    ],
+    advantages: [
+      { label:'Sécurité alimentaire',      score:8 },
+      { label:'Développement économique',   score:8 },
+      { label:'Absorption de CO₂',          score:6 },
+      { label:'Protection environnementale',score:7 },
+    ],
+    co2: { total:480, period:'0 ans / 10 ans', annual:'48 Kg', equiv:'545 kg de déchets organiques' },
+    sens: { word:'Pureté', desc:"Le citronnier symbolise la pureté et la clarté. Son fruit lumineux est associé à la fraîcheur et au renouveau dans de nombreuses cultures." },
+  },
+  jacquier: {
+    latin: 'Artocarpus heterophyllus',
+    usages: [
+      { icon:'🍈', title:'Alimentation', desc:'Le jackfruit est le plus grand fruit du monde. Sa chair peut remplacer la viande et nourrir des familles entières à faible coût.' },
+      { icon:'🪵', title:'Bois & artisanat', desc:'Son bois résistant est utilisé pour la fabrication de meubles, instruments de musique et objets artisanaux durables.' },
+    ],
+    advantages: [
+      { label:'Sécurité alimentaire',      score:10 },
+      { label:'Développement économique',   score:9 },
+      { label:'Absorption de CO₂',          score:9 },
+      { label:'Protection environnementale',score:8 },
+    ],
+    co2: { total:850, period:'0 ans / 10 ans', annual:'85 Kg', equiv:'965 kg de déchets organiques' },
+    sens: { word:'Générosité', desc:"Le jacquier est le symbole de la générosité absolue : un seul arbre peut produire jusqu'à 200 fruits par an, nourrissant familles et animaux." },
+  },
+};
+
+/* ── Rendu section info avec animation liquid ── */
+function renderTreeInfo(treeId) {
+  const info = TREE_INFO[treeId];
+  if (!info) return;
+
+  const wrap = $('treeInfoWrap');
+
+  // Fermer d'abord pour l'animation
+  wrap.classList.remove('open');
+
+  setTimeout(() => {
+    // Latin chip
+    $('latinChip').textContent = info.latin;
+
+    // Usages
+    $('usagesList').innerHTML = info.usages.map(u => `
+      <div class="usage-item">
+        <div class="usage-icon">${u.icon}</div>
+        <div>
+          <div class="usage-title">${u.title}</div>
+          <div class="usage-desc">${u.desc}</div>
+        </div>
+      </div>
+    `).join('');
+
+    // Avantages — SVG rings
+    const advIcons = {
+      'Sécurité alimentaire':'🌾', 'Développement économique':'💰',
+      'Absorption de CO₂':'🌿', 'Protection environnementale':'🛡️'
+    };
+    $('advantagesGrid').innerHTML = info.advantages.map(a => `
+      <div class="adv-item">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 72 72">
+            <circle class="ring-track" cx="34" cy="34" r="27"/>
+            <circle class="ring-fill" id="ring_${slugify(a.label)}" cx="34" cy="34" r="27"/>
+          </svg>
+          <div class="ring-center">
+            <span class="ring-icon">${advIcons[a.label]||'⭐'}</span>
+            <span class="ring-score">${a.score}/10</span>
+          </div>
+        </div>
+        <div class="adv-text">
+          <div class="adv-label">${a.label}</div>
+          <div class="adv-bar-wrap"><div class="adv-bar-fill" id="bar_${slugify(a.label)}"></div></div>
+        </div>
+      </div>
+    `).join('');
+
+    // CO2
+    $('co2Block').innerHTML = `
+      <div class="co2-num">${info.co2.total}<span class="co2-unit"> KG de CO₂</span></div>
+      <div class="co2-eq">≈ ${info.co2.equiv}</div>
+      <div class="co2-rows">
+        <div class="co2-row"><span>Période d'absorption</span><span>${info.co2.period}</span></div>
+        <div class="co2-row"><span>Moyenne annuelle</span><span>${info.co2.annual}</span></div>
+      </div>
+    `;
+
+    // Sens
+    $('sensBlock').innerHTML = `
+      <span class="sens-quote">"</span>
+      <span class="sens-word">${info.sens.word}</span>
+      <span class="sens-quote">"</span>
+      <div class="sens-desc">${info.sens.desc}</div>
+    `;
+
+    // Ouvrir avec animation
+    wrap.classList.add('open');
+
+    // Animer les rings SVG
+    setTimeout(() => {
+      const circumference = 170; // 2 * π * 27
+      info.advantages.forEach(a => {
+        const ring = $(`ring_${slugify(a.label)}`);
+        if (ring) ring.style.strokeDashoffset = circumference * (1 - a.score / 10);
+      });
+    }, 150);
+
+  }, wrap.classList.contains('open') ? 0 : 50);
+}
+
+function slugify(str) {
+  return str.replace(/[^a-zA-Z0-9]/g,'_');
+}
+
+/* ══════════════════════════════════════════════════════
+   DONNÉES
+   ══════════════════════════════════════════════════════ */
+const TREES = [
+  { id:'manguier',   name:'Manguier',   price:28, extra:0,  popular:true  },
+  { id:'avocatier',  name:'Avocatier',  price:28, extra:0,  popular:false },
+  { id:'oranger',    name:'Oranger',    price:33, extra:5,  popular:false },
+  { id:'cocotier',   name:'Cocotier',   price:28, extra:0,  popular:false },
+  { id:'citronnier', name:'Citronnier', price:33, extra:5,  popular:false },
+  { id:'jacquier',   name:'Jacquier',   price:28, extra:0,  popular:false },
+];
+
+const COUNTRIES = [
+  {
+    id:'madagascar', name:'Madagascar', flagCode:'mg', lat:-20, lon:47,
+    capitale:'Antananarivo', population:'28 millions', superficie:'587 041 km²',
+    anecdotes:[
+      '🏝️ 5e plus grande île du monde, séparée de l\'Afrique il y a 88 millions d\'années',
+      '🦎 90% de la faune est endémique — on y trouve des lémuriens nulle part ailleurs',
+      '🌿 Madagascar est le 1er producteur mondial de vanille naturelle',
+    ]
+  },
+  {
+    id:'bangladesh', name:'Bangladesh', flagCode:'bd', lat:23.7, lon:90.4,
+    capitale:'Dhaka', population:'170 millions', superficie:'147 570 km²',
+    anecdotes:[
+      '🌊 Traversé par plus de 700 rivières — un réseau fluvial parmi les plus denses au monde',
+      '🐅 Abrite le Sundarbans, la plus grande forêt de mangrove du monde et refuge du tigre du Bengale',
+      '🌾 3e producteur mondial de riz, nourricier de toute la région',
+    ]
+  },
+  {
+    id:'srilanka', name:'Sri Lanka', flagCode:'lk', lat:7.9, lon:80.8,
+    capitale:'Sri Jayawardenepura Kotte', population:'22 millions', superficie:'65 610 km²',
+    anecdotes:[
+      '☕ 2e exportateur mondial de thé — le fameux "Ceylan" est synonyme de qualité depuis 150 ans',
+      '🌊 Surnommée la "Perle de l\'Océan Indien" pour la richesse de sa biodiversité marine',
+      '🐘 Plus haute densité d\'éléphants sauvages d\'Asie sur son territoire',
+    ]
+  },
+];
+
+const PELUCHES = [
+  { id:'banane', name:'Banane', price:14 },
+  { id:'mangue', name:'Mangue', price:14 },
+  { id:'fraise', name:'Fraise', price:13 },
+];
+
+const S = { tree:'manguier', country:'bangladesh', age:3, name:'', msg:'', peluche:null, cartCount:0 };
+const $ = id => document.getElementById(id);
+
+/* ── Rendu cartes arbres ── */
+function renderTrees() {
+  $('treeGrid').innerHTML = TREES.map(t => `
+    <div class="tree-opt ${S.tree===t.id?'sel':''}" onclick="selectTree('${t.id}')">
+      ${t.popular ? '<div class="pop-badge">⭐ Populaire</div>' : ''}
+      <div class="sel-check">✓</div>
+      <img class="tree-opt-img"
+           src="${IMG.trees[t.id]}"
+           alt="${t.name}"
+           onerror="this.src='${ph(t.name)}'" />
+      <div class="tree-opt-info">
+        <span class="tree-opt-name">${t.name}</span>
+        <span class="tree-opt-price">${t.extra>0?'+'+t.extra+' €':'Inclus'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── Rendu pays ── */
+function renderCountries() {
+  $('countryWrap').innerHTML = COUNTRIES.map(c => `
+    <button class="country-btn ${S.country===c.id?'sel':''}" onclick="selectCountry('${c.id}')">
+      <img class="c-flag-img" src="https://flagcdn.com/w40/${c.flagCode}.png" alt="${c.name}" />
+      <span>${c.name}</span>
+    </button>
+  `).join('');
+}
+
+/* ── Rendu peluches ── */
+function renderPeluches() {
+  $('pelucheRow').innerHTML = PELUCHES.map(p => `
+    <div class="pel-card ${S.peluche===p.id?'sel':''}" onclick="selectPeluche('${p.id}')">
+      <div class="pel-check">${S.peluche===p.id?'✓':''}</div>
+      <img class="pel-img"
+           src="${IMG.peluches[p.id]}"
+           alt="Peluche ${p.name}"
+           onerror="this.src='${ph('Peluche+'+p.name,'f4a261')}'" />
+      <div class="pel-name">Peluche ${p.name}</div>
+      <div class="pel-price">${p.price},00 €</div>
+    </div>
+  `).join('');
+}
+
+/* ── Preview : change l'image avec transition ── */
+function updateSceneImage(src, fallback) {
+  const img = $('sceneImg');
+  img.classList.add('switching');
+  setTimeout(() => {
+    img.src = src;
+    img.onerror = () => { img.src = fallback; img.onerror = null; };
+    img.onload  = () => img.classList.remove('switching');
+    /* fallback si l'image ne charge pas */
+    setTimeout(() => img.classList.remove('switching'), 600);
+  }, 200);
+}
+
+/* ── Mise à jour du preview ── */
+function updatePreview() {
+  const tree    = TREES.find(t => t.id === S.tree);
+  const country = COUNTRIES.find(c => c.id === S.country);
+
+  /* Changer l'image */
+  updateSceneImage(IMG.trees[S.tree], ph(tree.name));
+
+  /* Pancarte */
+  $('previewTreeName').textContent = 'MON ' + tree.name.toUpperCase();
+  $('previewCountry').textContent  = country.name.toUpperCase();
+  const msg = S.msg || (S.name ? `Planté pour ${S.name} 🌿` : 'Pour Maman ! Avec Amour. 🌿');
+  $('previewMsg').textContent = msg;
+
+  /* Badge pays */
+  $('countryBadge').innerHTML = `<img src="https://flagcdn.com/w40/${country.flagCode}.png" style="width:22px;height:15px;object-fit:cover;border-radius:3px;vertical-align:middle;margin-right:4px;box-shadow:0 1px 3px rgba(0,0,0,.2);" alt="${country.name}"> Planté au ${country.name}`;
+}
+
+/* ── Prix ── */
+let _certAdded  = false;
+const _certPrice = 9;
+let _giftActive  = false;
+let _giftPrice   = 3; // prix emballage courant (0, 3 ou 6)
+
+function updatePrice() {
+  const tree    = TREES.find(t => t.id === S.tree);
+  const peluche = PELUCHES.find(p => p.id === S.peluche);
+  const total   = tree.price + (peluche ? peluche.price : 0)
+                + (_certAdded  ? _certPrice : 0)
+                + (_giftActive ? _giftPrice : 0);
+
+  $('headerPrice').textContent  = total;
+  $('sumTreeName').textContent  = tree.name;
+  $('sumTreePrice').textContent = tree.price + ' €';
+  $('sumTotal').textContent     = total + ' €';
+
+  const row = $('sumPelRow');
+  if (peluche) {
+    row.style.display = 'flex';
+    $('sumPelName').textContent  = 'Peluche ' + peluche.name;
+    $('sumPelPrice').textContent = peluche.price + ' €';
+  } else {
+    row.style.display = 'none';
+  }
+
+  $('sumCertRow').style.display = _certAdded ? 'flex' : 'none';
+
+  const giftRow = $('sumGiftRow');
+  if (_giftActive && _giftPrice > 0) {
+    giftRow.style.display = 'flex';
+    const labels = {3:'🎁 Emballage Standard', 6:'✨ Emballage Premium'};
+    $('sumGiftLabel').textContent = labels[_giftPrice] || '🎁 Emballage';
+    $('sumGiftPrice').textContent = _giftPrice + ' €';
+  } else {
+    giftRow.style.display = 'none';
+  }
+}
+
+/* ── Actions ── */
+function selectTree(id)    { S.tree=id;    renderTrees();    updatePreview(); updatePrice(); renderTreeInfo(id); }
+function selectCountry(id) { S.country=id; renderCountries(); updatePreview(); if(window.updateGlobeTarget) updateGlobeTarget(id); updateCountryInfo(id); }
+function selectPeluche(id) { S.peluche = S.peluche===id ? null : id; renderPeluches(); updatePrice(); }
+
+$('ageSlider').addEventListener('input', function() {
+  S.age = parseInt(this.value);
+  $('ageVal').textContent = S.age;
+  this.style.setProperty('--pct', ((S.age-1)/9*100).toFixed(1)+'%');
+});
+
+$('nameInput').addEventListener('input', function() {
+  S.name = this.value;
+  $('nameCount').textContent = this.value.length;
+  updatePreview();
+});
+
+$('msgInput').addEventListener('input', function() {
+  S.msg = this.value;
+  $('msgCount').textContent = this.value.length;
+  updatePreview();
+});
+
+$('ctaBtn').addEventListener('click', function() {
+  S.cartCount++;
+  $('cartCount').textContent = `(${S.cartCount})`;
+  this.textContent = '✅ Ajouté au panier !';
+  this.style.background = '#52b788';
+  setTimeout(() => { this.innerHTML='🛒 Ajouter au Panier →'; this.style.background=''; }, 2200);
+});
+
+/* ══════════════════════════════════════════════════════
+   CERTIFICAT — 3D tilt + iridescent glare + live name
+   ══════════════════════════════════════════════════════ */
+(function() {
+  const scene     = $('certScene');
+  const card3d    = $('cert3d');
+  const glare     = $('certGlare');
+  const overlay   = $('certNameOverlay');
+  const nameInput = $('certNameInput');
+  const addBtn    = $('certAddBtn');
+
+  /* ── Live name on certificate ── */
+  nameInput.addEventListener('input', function() {
+    overlay.textContent = this.value.trim() || 'Votre Nom Ici';
+  });
+
+  /* ── 3D tilt on mouse move ── */
+  scene.addEventListener('mousemove', function(e) {
+    const rect = scene.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width  - 0.5;
+    const y = (e.clientY - rect.top)  / rect.height - 0.5;
+
+    card3d.style.transform = `rotateX(${(-y * 20).toFixed(2)}deg) rotateY(${(x * 28).toFixed(2)}deg) scale(1.04)`;
+
+    const gx = ((e.clientX - rect.left) / rect.width  * 100).toFixed(1);
+    const gy = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1);
+    glare.style.background = `radial-gradient(circle at ${gx}% ${gy}%, rgba(255,255,255,.5) 0%, transparent 55%)`;
+  });
+
+  scene.addEventListener('mouseleave', function() {
+    card3d.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+    glare.style.background = 'radial-gradient(circle at 50% 50%, rgba(255,255,255,.35) 0%, transparent 60%)';
+  });
+
+  /* ── Add / remove certificat ── */
+  addBtn.addEventListener('click', function() {
+    _certAdded = !_certAdded;
+
+    if (_certAdded) {
+      this.textContent = '✅ Certificat ajouté';
+      this.classList.add('added');
+      scene.style.outline = '2px solid #c9a227';
+      scene.style.borderRadius = '14px';
+    } else {
+      this.textContent = 'Ajouter au panier';
+      this.classList.remove('added');
+      scene.style.outline = 'none';
+    }
+
+    updatePrice();
+  });
+})();
+
+/* ══════════════════════════════════════════════════════
+   CADEAU — toggle + emballage
+   ══════════════════════════════════════════════════════ */
+function setGift(isGift) {
+  _giftActive = isGift;
+
+  $('giftYes').classList.toggle('active-yes', isGift);
+  $('giftNo').classList.toggle('active-no', !isGift);
+  $('giftYes').classList.toggle('active-no', false);
+  $('giftNo').classList.toggle('active-yes', false);
+
+  const wrap = $('giftBoxWrap');
+  if (isGift) {
+    wrap.classList.add('open');
+    // Sélectionner "Standard" par défaut si rien n'est sélectionné
+    if (_giftPrice === 0) {
+      _giftPrice = 3;
+      const opts = document.querySelectorAll('.gift-wrap-opt');
+      opts.forEach(o => o.classList.remove('selected'));
+      if (opts[1]) opts[1].classList.add('selected');
+    }
+  } else {
+    wrap.classList.remove('open');
+  }
+  updatePrice();
+}
+
+function selectWrapping(type, el) {
+  document.querySelectorAll('.gift-wrap-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  _giftPrice = type === 'none' ? 0 : type === 'standard' ? 3 : 6;
+  updatePrice();
+}
+
+/* ── Country Info Panel ── */
+function updateCountryInfo(countryId) {
+  const c = COUNTRIES.find(x => x.id === countryId);
+  if (!c) return;
+  const panel = $('countryInfo');
+  panel.innerHTML = `
+    <div class="country-info-panel">
+      <div class="ci-header">
+        <img class="ci-flag-big" src="https://flagcdn.com/w80/${c.flagCode}.png" alt="${c.name}">
+        <div>
+          <div class="ci-name">${c.name}</div>
+          <div class="ci-capitale">🏛️ Capitale : ${c.capitale}</div>
+        </div>
+      </div>
+      <div class="ci-stats">
+        <div class="ci-stat"><span>👥</span><span>Population :</span>&nbsp;<strong>${c.population}</strong></div>
+        <div class="ci-stat"><span>📐</span><span>Superficie :</span>&nbsp;<strong>${c.superficie}</strong></div>
+      </div>
+      <div class="ci-anecdotes">
+        ${c.anecdotes.map(a => `<div class="ci-anecdote">${a}</div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ══════════════════════════════════════════════════════
+   GLOBE 3D
+   ══════════════════════════════════════════════════════ */
+(function initGlobe() {
+  if (typeof THREE === 'undefined') return;
+
+  const canvas = $('globeCanvas');
+  const SIZE = 220;
+
+  const gScene    = new THREE.Scene();
+  const gCamera   = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+  gCamera.position.z = 2.8;
+
+  const gRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  gRenderer.setSize(SIZE, SIZE);
+  gRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  gRenderer.setClearColor(0x000000, 0);
+
+  /* Lights — ambient fort pour garder la Terre lumineuse partout */
+  gScene.add(new THREE.AmbientLight(0xffffff, 1.6));
+  const sun = new THREE.DirectionalLight(0xfff8e7, 0.9);
+  sun.position.set(5, 3, 5);
+  gScene.add(sun);
+  /* Fill light côté ombre */
+  const fill = new THREE.DirectionalLight(0xaaccff, 0.45);
+  fill.position.set(-5, -2, -3);
+  gScene.add(fill);
+
+  /* Earth */
+  const earthGeo = new THREE.SphereGeometry(1, 64, 64);
+  const earthMat = new THREE.MeshPhongMaterial({ color:0x4a9fc8, shininess:12, specular:new THREE.Color(0x224433) });
+  const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+  gScene.add(earthMesh);
+
+  /* Load texture */
+  new THREE.TextureLoader().load(
+    'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+    tex => { earthMat.map = tex; earthMat.color.set(0xffffff); earthMat.needsUpdate = true; }
+  );
+
+  /* Atmosphere glow */
+  const atmoMat = new THREE.MeshPhongMaterial({ color:0x66bbff, transparent:true, opacity:0.11, side:THREE.FrontSide });
+  gScene.add(new THREE.Mesh(new THREE.SphereGeometry(1.035, 64, 64), atmoMat));
+
+  /* ── Pin de localisation (child of earth) ── */
+  const pinMat  = new THREE.MeshBasicMaterial({ color:0xff1f1f });
+  const pinMat2 = new THREE.MeshBasicMaterial({ color:0xcc0000 });
+
+  /* Tête du pin (sphère) */
+  const pinHead = new THREE.Mesh(new THREE.SphereGeometry(0.062, 20, 20), pinMat);
+  pinHead.position.y = 0.13;
+
+  /* Corps du pin (cône pointé vers le sol = vers le centre du globe) */
+  const pinBody = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.11, 10), pinMat2);
+  pinBody.position.y = 0.056;
+  pinBody.rotation.z = Math.PI; /* pointe vers le bas */
+
+  /* Anneau pulsant à la base */
+  const ringMat = new THREE.MeshBasicMaterial({ color:0xff4444, transparent:true, opacity:0.55, side:THREE.DoubleSide });
+  const ringMesh = new THREE.Mesh(new THREE.RingGeometry(0.055, 0.09, 28), ringMat);
+
+  /* Groupe pin complet */
+  const pinGroup = new THREE.Group();
+  pinGroup.add(pinHead);
+  pinGroup.add(pinBody);
+  pinGroup.add(ringMesh);
+  earthMesh.add(pinGroup);
+
+  function latLonToVec3(lat, lon, r) {
+    const phi   = (90 - lat) * Math.PI / 180;
+    const theta = (lon + 180) * Math.PI / 180;
+    return new THREE.Vector3(
+      -r * Math.sin(phi) * Math.cos(theta),
+       r * Math.cos(phi),
+       r * Math.sin(phi) * Math.sin(theta)
+    );
+  }
+
+  function setMarker(c) {
+    const pos = latLonToVec3(c.lat, c.lon, 1.0);
+    pinGroup.position.copy(pos);
+    /* Orienter le pin vers l'extérieur du globe (normale de surface) */
+    const outward = pos.clone().normalize();
+    pinGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), outward);
+    /* Anneau : face à la caméra (perpendiculaire à la normale) */
+    ringMesh.position.set(0, 0, 0);
+    ringMesh.lookAt(pinGroup.worldToLocal(new THREE.Vector3(0, 0, 0)));
+  }
+
+  /* Init with current country */
+  const initC = COUNTRIES.find(c => c.id === S.country);
+  if (initC) setMarker(initC);
+
+  /* ── Formule correcte : pour que le pays face la caméra (+Z) ──
+     Avec le mapping UV de Three.js SphereGeometry :
+     targetRotY = -π/2 - lon * π/180                            */
+  function lonToRotY(lon) { return -Math.PI/2 - lon * Math.PI/180; }
+
+  let targetRotY    = initC ? lonToRotY(initC.lon) : 0;
+  let isAnimating   = !!initC;
+  let countryChosen = !!initC;
+
+  earthMesh.rotation.y = targetRotY + 2.5; // démarre décalé pour qu'on voit l'animation
+
+  /* ── Drag souris ── */
+  let drag = { active:false, lastX:0, velX:0 };
+
+  canvas.style.cursor = 'grab';
+
+  canvas.addEventListener('mousedown', e => {
+    drag.active = true;
+    drag.lastX  = e.clientX;
+    drag.velX   = 0;
+    isAnimating = false;          // stoppe l'animation vers le pays
+    canvas.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!drag.active) return;
+    const dx = e.clientX - drag.lastX;
+    drag.lastX = e.clientX;
+    drag.velX  = dx;
+    earthMesh.rotation.y += dx * 0.008;
+    targetRotY = earthMesh.rotation.y;
+  });
+
+  window.addEventListener('mouseup', () => {
+    drag.active = false;
+    canvas.style.cursor = 'grab';
+  });
+
+  /* Touch support */
+  canvas.addEventListener('touchstart', e => {
+    drag.active = true;
+    drag.lastX  = e.touches[0].clientX;
+    drag.velX   = 0;
+    isAnimating = false;
+    e.preventDefault();
+  }, { passive:false });
+
+  canvas.addEventListener('touchmove', e => {
+    if (!drag.active) return;
+    const dx = e.touches[0].clientX - drag.lastX;
+    drag.lastX = e.touches[0].clientX;
+    drag.velX  = dx;
+    earthMesh.rotation.y += dx * 0.008;
+    targetRotY = earthMesh.rotation.y;
+    e.preventDefault();
+  }, { passive:false });
+
+  canvas.addEventListener('touchend', () => { drag.active = false; });
+
+  /* ── Globe target : appelé à chaque sélection de pays ── */
+  window.updateGlobeTarget = function(countryId) {
+    const c = COUNTRIES.find(x => x.id === countryId);
+    if (!c) return;
+    setMarker(c);
+    targetRotY    = lonToRotY(c.lon);
+    isAnimating   = true;
+    countryChosen = true;
+  };
+
+  /* ── Boucle d'animation ── */
+  let t = 0;
+  (function animate() {
+    requestAnimationFrame(animate);
+    t++;
+
+    if (!drag.active) {
+      if (isAnimating) {
+        /* Animation fluide vers le pays cible */
+        let d = targetRotY - earthMesh.rotation.y;
+        d = ((d + Math.PI) % (2 * Math.PI)) - Math.PI;
+        earthMesh.rotation.y += d * 0.07;
+        if (Math.abs(d) < 0.001) isAnimating = false;
+      } else if (!countryChosen) {
+        /* Rotation auto uniquement si aucun pays sélectionné */
+        earthMesh.rotation.y += 0.0025;
+        targetRotY = earthMesh.rotation.y;
+      }
+      /* Inertie après drag */
+      else if (Math.abs(drag.velX) > 0.1) {
+        earthMesh.rotation.y += drag.velX * 0.003;
+        drag.velX *= 0.92;
+      }
+    }
+
+    /* Pulse ring */
+    const pulse = 0.7 + 0.3 * Math.abs(Math.sin(t * 0.06));
+    ringMesh.scale.setScalar(pulse);
+    ringMat.opacity = 0.2 + 0.4 * (1 - Math.abs(Math.sin(t * 0.06)));
+
+    gRenderer.render(gScene, gCamera);
+  })();
+})();
+
+/* Init */
+renderTrees();
+renderCountries();
+renderPeluches();
+updatePreview();
+updatePrice();
+renderTreeInfo(S.tree);
+updateCountryInfo(S.country);
+$('ageSlider').style.setProperty('--pct','22.2%');
+</script>
+</body>
+</html>
